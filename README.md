@@ -1,7 +1,5 @@
 # Azure + AAP Provider Project for HCP Terraform / Terraform Cloud
 
-This project is the **HCP Terraform-ready** conversion of the original Azure + Ansible Automation Platform handoff example.
-
 It provisions an Azure VM and then uses the **official `ansible/aap` Terraform provider** to:
 - look up an existing AAP / Automation Controller Job Template
 - create an AAP inventory
