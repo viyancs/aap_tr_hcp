@@ -114,7 +114,7 @@ Mark secrets like `aap_password` as **sensitive**. HCP Terraform variables suppo
 
 ### 5. Queue a plan/apply
 
-Once the workspace variables are configured, queue a run. HCP Terraform performs remote operations in the context of a workspace, which provides configuration, state, and variables for the run. citeturn373202search13
+Once the workspace variables are configured, queue a run. HCP Terraform performs remote operations in the context of a workspace, which provides configuration, state, and variables for the run. 
 
 ## Example `aap_job_extra_vars`
 
@@ -155,11 +155,3 @@ After apply, Terraform returns:
 - created AAP inventory ID/name
 - AAP job launch resource ID
 
-## Recommended enterprise model
-
-For your environment, the clean split is:
-
-- **HCP Terraform / Terraform Enterprise** = provisioning, state, policy, workspace variables
-- **Ansible Automation Platform / Tower** = configuration management and operational workflows
-
-That keeps Terraform as the orchestrator and AAP as the configuration engine.
