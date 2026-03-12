@@ -57,13 +57,13 @@ Put the project in GitHub, GitLab, Bitbucket, or Azure DevOps.
 
 ### 2. Create an HCP Terraform workspace
 
-Create a **VCS-backed workspace** and connect it to the repository. HCP Terraform supports VCS-backed workspaces and lets you choose the tracked branch and working directory in workspace settings. citeturn373202search5turn373202search1
+Create a **VCS-backed workspace** and connect it to the repository. HCP Terraform supports VCS-backed workspaces and lets you choose the tracked branch and working directory in workspace settings. 
 
 For this repository:
 - **Working Directory**: leave blank if this project is at repo root
 - if you place it under a subfolder such as `terraform/`, set that subfolder as the workspace working directory
 
-Note: a new VCS workspace needs an initial manually queued run before later VCS webhook-triggered runs are accepted. citeturn373202search15
+Note: a new VCS workspace needs an initial manually queued run before later VCS webhook-triggered runs are accepted. 
 
 ### 3. Configure Azure authentication
 
@@ -71,7 +71,7 @@ Use one of these patterns:
 
 #### Option A — Preferred: HCP Terraform dynamic credentials for Azure
 
-HCP Terraform supports **dynamic credentials** for the Azure provider using OIDC. HashiCorp documents this as the recommended modern approach for remote runs. citeturn373202search0
+HCP Terraform supports **dynamic credentials** for the Azure provider using OIDC. HashiCorp documents this as the recommended modern approach for remote runs. 
 
 This avoids storing long-lived Azure client secrets in the workspace.
 
@@ -83,7 +83,7 @@ Set Azure credentials as **environment variables** in the workspace, for example
 - `ARM_CLIENT_ID`
 - `ARM_CLIENT_SECRET`
 
-Variables and variable sets in HCP Terraform can be managed at the workspace or project level. citeturn373202search6turn373202search7
+Variables and variable sets in HCP Terraform can be managed at the workspace or project level.
 
 ### 4. Configure Terraform variables in the workspace
 
@@ -106,7 +106,7 @@ Add these as **Terraform Variables** in HCP Terraform:
 | `aap_inventory_name` | No | optional |
 | `aap_job_extra_vars` | No | map/object |
 
-Mark secrets like `aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. citeturn373202search6turn373202search7
+Mark secrets like `aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
 
 ### 5. Queue a plan/apply
 
@@ -127,7 +127,7 @@ If you enter it in the HCP Terraform UI, make sure the variable is stored as an 
 
 ## Optional: CLI-driven remote runs
 
-If you want to run from your workstation but keep execution/state in HCP Terraform, use the **CLI-driven remote workflow** and add the example shown in `docs/cloud_block.example.tf`. HCP Terraform supports UI/VCS-driven, API-driven, and CLI-driven remote run workflows. citeturn373202search11turn373202search13
+If you want to run from your workstation but keep execution/state in HCP Terraform, use the **CLI-driven remote workflow** and add the example shown in `docs/cloud_block.example.tf`. HCP Terraform supports UI/VCS-driven, API-driven, and CLI-driven remote run workflows. 
 
 For most enterprise use cases, **VCS-driven** is the cleaner approach.
 
