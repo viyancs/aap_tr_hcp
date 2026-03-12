@@ -1,0 +1,30 @@
+---
+- name: Install and start nginx
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install nginx on Debian-family hosts
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install nginx on RedHat-family hosts
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Ensure nginx is enabled and started
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Verify HTTP is listening
+      ansible.builtin.wait_for:
+        port: 80
+        timeout: 30
