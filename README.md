@@ -65,6 +65,10 @@ For this repository:
 
 Note: a new VCS workspace needs an initial manually queued run before later VCS webhook-triggered runs are accepted. 
 
+step on hcp :
+----
+Create New Workspace -> Version Control Workflow -> choose github repository
+
 ### 3. Configure Azure authentication
 
 Use one of these patterns:
