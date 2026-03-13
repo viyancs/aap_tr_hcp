@@ -69,19 +69,16 @@ step on hcp :
 ----
 Create New Workspace -> Version Control Workflow -> choose github repository
 
+if the terraform is enterprise we need to create oauth from github.com to be access from terraform standalone enterprise.
+going to setting from github.com -> developer setting-> setup oauth token
+
+
 ### 3. Configure Azure authentication
 
-Use one of these patterns:
+Login into azure portal -> create app registration under Microsoft Entra id -> create 
+after that copy information about tenant subcription id , secret , app id to this environment variable 
 
-#### Option A — Preferred: HCP Terraform dynamic credentials for Azure
-
-HCP Terraform supports **dynamic credentials** for the Azure provider using OIDC. HashiCorp documents this as the recommended modern approach for remote runs. 
-
-This avoids storing long-lived Azure client secrets in the workspace.
-
-#### Option B — Static Azure environment variables
-
-Set Azure credentials as **environment variables** in the workspace, for example:
+Set Azure credentials as **environment variables** in the workspace terraform enterprise:
 - `ARM_SUBSCRIPTION_ID`
 - `ARM_TENANT_ID`
 - `ARM_CLIENT_ID`
@@ -114,7 +111,7 @@ Mark secrets like `aap_password` as **sensitive**. HCP Terraform variables suppo
 
 ### 5. Queue a plan/apply
 
-Once the workspace variables are configured, queue a run. HCP Terraform performs remote operations in the context of a workspace, which provides configuration, state, and variables for the run. 
+Once the workspace variables are configured, queue a run. HCP Terraform performs remote operations in the context of a workspace, which provides configuration, state, and variables for the run. ';
 
 ## Example `aap_job_extra_vars`
 
