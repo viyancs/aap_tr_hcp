@@ -83,16 +83,22 @@ resource "azurerm_linux_virtual_machine" "vm" {
 resource "terraform_data" "wait_for_ssh" {
 
   provisioner "local-exec" {
+
     command = <<EOT
 
-echo "Waiting for SSH..."
+echo "Waiting for SSH port..."
 
-for i in {1..30}; do
-  nc -z ${azurerm_public_ip.vm_ip.ip_address} 22 && exit 0
+for i in $(seq 1 30); do
+
+  timeout 3 bash -c "</dev/tcp/${azurerm_public_ip.vm_ip.ip_address}/22" \
+    && echo "SSH port open" && exit 0
+
+  echo "SSH not ready..."
   sleep 10
+
 done
 
-echo "SSH not ready"
+echo "SSH timeout"
 exit 1
 
 EOT
