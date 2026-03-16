@@ -98,16 +98,16 @@ Add these as **Terraform Variables** in HCP Terraform:
 | `vm_size` | No | `Standard_B2s` |
 | `ssh_public_key` | No | full public key text |
 | `my_ip_cidr` | No | `203.0.113.10/32` |
-| `aap_host` | No | `https://controller.example.com` |
-| `aap_username` | No | `svc_terraform` |
-| `aap_password` | Yes | AAP password |
+| `TF_VAR_aap_host` | No | `https://controller.example.com` |
+| `TF_VAR_aap_username` | No | `svc_terraform` |
+| `TF_VAR_aap_password` | Yes | AAP password |
 | `aap_insecure_skip_verify` | No | `false` |
 | `aap_organization_name` | No | `Default` |
 | `aap_job_template_name` | No | `linux-install-nginx` |
 | `aap_inventory_name` | No | optional |
 | `aap_job_extra_vars` | No | map/object |
 
-Mark secrets like `aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
+Mark secrets like `TF_VAR_aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
 
 ### 5. Queue a plan/apply
 
