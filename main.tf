@@ -30,51 +30,24 @@ module "compute" {
   vm_size             = var.vm_size
 }
 
-# Lookup AAP Job Template (optional)
-data "aap_job_template" "configure_vm" {
-  count             = var.enable_aap ? 1 : 0
-  name              = var.aap_job_template_name
-  organization_name = var.aap_organization_name
-}
+module "aap" {
+  source = "./modules/aap"
 
-# Create inventory in AAP (optional)
-resource "aap_inventory" "vm_inventory" {
   count = var.enable_aap ? 1 : 0
 
-  name        = local.inventory_name
-  description = "Terraform-managed inventory for ${module.compute.vm_name}"
+  aap_host                 = var.aap_host
+  aap_username             = var.aap_username
+  aap_password             = var.aap_password
+  aap_insecure_skip_verify = var.aap_insecure_skip_verify
 
-  variables = jsonencode({
-    tf_workspace = "hcp-terraform"
-    platform     = "azure"
-    provisioner  = "terraform"
-  })
-}
+  aap_job_template_name = var.aap_job_template_name
+  aap_organization_name = var.aap_organization_name
+  aap_job_extra_vars    = var.aap_job_extra_vars
 
-# Register VM host into inventory (optional)
-resource "aap_host" "vm_host" {
-  count = var.enable_aap ? 1 : 0
-
-  inventory_id = aap_inventory.vm_inventory[0].id
-  name         = module.compute.vm_name
-  description  = "Azure VM provisioned by HCP Terraform"
-  enabled      = true
-
-  variables = jsonencode({
-    ansible_host         = module.compute.public_ip_address
-    ansible_user         = var.vm_admin_username
-    private_ip           = module.compute.private_ip_address
-    azure_resource_group = module.network.resource_group_name
-  })
-}
-
-# Launch job template (optional)
-resource "aap_job" "configure_nginx" {
-  count = var.enable_aap ? 1 : 0
-
-  job_template_id = data.aap_job_template.configure_vm[0].id
-  inventory_id    = aap_inventory.vm_inventory[0].id
-  extra_vars      = jsonencode(var.aap_job_extra_vars)
-
-  depends_on = [aap_host.vm_host]
+  inventory_name      = local.inventory_name
+  vm_name             = module.compute.vm_name
+  public_ip_address   = module.compute.public_ip_address
+  private_ip_address  = module.compute.private_ip_address
+  vm_admin_username   = var.vm_admin_username
+  resource_group_name = module.network.resource_group_name
 }
