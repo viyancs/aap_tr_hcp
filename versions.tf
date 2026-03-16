@@ -11,6 +11,11 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+
+    aap = {
+      source  = "ansible/aap"
+      version = ">= 1.3.0"
+    }
   }
 }
 
