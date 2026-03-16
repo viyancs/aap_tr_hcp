@@ -32,7 +32,8 @@ module "compute" {
 
 module "aap" {
   source = "./modules/aap"
-  count  = var.enable_aap ? 1 : 0
+
+  count = var.enable_aap ? 1 : 0
 
   providers = {
     aap = aap
