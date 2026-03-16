@@ -19,16 +19,16 @@ output "private_ip_address" {
 }
 
 output "aap_inventory_id" {
-  value       = aap_inventory.vm_inventory.id
+  value       = try(aap_inventory.vm_inventory[0].id, null)
   description = "Inventory ID created in Ansible Automation Platform."
 }
 
 output "aap_inventory_name" {
-  value       = aap_inventory.vm_inventory.name
+  value       = try(aap_inventory.vm_inventory[0].name, null)
   description = "Inventory name created in Ansible Automation Platform."
 }
 
 output "aap_job_id" {
-  value       = aap_job.configure_nginx.id
+  value       = try(aap_job.configure_nginx[0].id, null)
   description = "AAP job launch resource ID."
 }

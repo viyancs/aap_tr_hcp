@@ -1,3 +1,9 @@
+variable "enable_aap" {
+  description = "Enable AAP automation after VM creation"
+  type        = bool
+  default     = true
+}
+
 variable "location" {
   description = "Azure region for all resources."
   type        = string

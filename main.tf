@@ -30,16 +30,19 @@ module "compute" {
   vm_size             = var.vm_size
 }
 
-# Looks up an existing Automation Controller / AAP job template.
+# Lookup AAP Job Template (optional)
 data "aap_job_template" "configure_vm" {
+  count             = var.enable_aap ? 1 : 0
   name              = var.aap_job_template_name
   organization_name = var.aap_organization_name
 }
 
+# Create inventory in AAP (optional)
 resource "aap_inventory" "vm_inventory" {
-  name              = local.inventory_name
-  organization_name = var.aap_organization_name
-  description       = "Terraform-managed inventory for ${module.compute.vm_name}"
+  count = var.enable_aap ? 1 : 0
+
+  name        = local.inventory_name
+  description = "Terraform-managed inventory for ${module.compute.vm_name}"
 
   variables = jsonencode({
     tf_workspace = "hcp-terraform"
@@ -48,8 +51,11 @@ resource "aap_inventory" "vm_inventory" {
   })
 }
 
+# Register VM host into inventory (optional)
 resource "aap_host" "vm_host" {
-  inventory_id = aap_inventory.vm_inventory.id
+  count = var.enable_aap ? 1 : 0
+
+  inventory_id = aap_inventory.vm_inventory[0].id
   name         = module.compute.vm_name
   description  = "Azure VM provisioned by HCP Terraform"
   enabled      = true
@@ -62,10 +68,12 @@ resource "aap_host" "vm_host" {
   })
 }
 
-# The target Job Template in AAP should have “Prompt on launch” enabled for Inventory.
+# Launch job template (optional)
 resource "aap_job" "configure_nginx" {
-  job_template_id = data.aap_job_template.configure_vm.id
-  inventory_id    = aap_inventory.vm_inventory.id
+  count = var.enable_aap ? 1 : 0
+
+  job_template_id = data.aap_job_template.configure_vm[0].id
+  inventory_id    = aap_inventory.vm_inventory[0].id
   extra_vars      = jsonencode(var.aap_job_extra_vars)
 
   depends_on = [aap_host.vm_host]
