@@ -83,6 +83,9 @@ Set Azure credentials as **environment variables** in the workspace terraform en
 - `ARM_TENANT_ID`
 - `ARM_CLIENT_ID`
 - `ARM_CLIENT_SECRET`
+- `TF_VAR_aap_host`
+- `TF_VAR_aap_username`
+- `TF_VAR_aap_password`
 
 Variables and variable sets in HCP Terraform can be managed at the workspace or project level.
 
@@ -98,9 +101,6 @@ Add these as **Terraform Variables** in HCP Terraform:
 | `vm_size` | No | `Standard_B2s` |
 | `ssh_public_key` | No | full public key text |
 | `my_ip_cidr` | No | `203.0.113.10/32` |
-| `TF_VAR_aap_host` | No | `https://controller.example.com` |
-| `TF_VAR_aap_username` | No | `svc_terraform` |
-| `TF_VAR_aap_password` | Yes | AAP password |
 | `aap_insecure_skip_verify` | No | `false` |
 | `aap_organization_name` | No | `Default` |
 | `aap_job_template_name` | No | `linux-install-nginx` |
