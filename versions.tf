@@ -19,18 +19,13 @@ terraform {
   }
 }
 
-# HCP Terraform / Terraform Cloud note:
-# - For VCS-driven workspaces, you usually DO NOT need a `cloud {}` block in code.
-# - Connect this repository to a workspace in the HCP Terraform UI.
-# - If you prefer CLI-driven remote runs, see docs/cloud_block.example.tf.
-
 provider "azurerm" {
   features {}
 }
 
 provider "aap" {
-  host                 = var.aap_host
-  username             = var.aap_username
-  password             = var.aap_password
-  insecure_skip_verify = var.aap_insecure_skip_verify
+  host                 = var.enable_aap ? var.aap_host : null
+  username             = var.enable_aap ? var.aap_username : null
+  password             = var.enable_aap ? var.aap_password : null
+  insecure_skip_verify = var.enable_aap ? var.aap_insecure_skip_verify : false
 }
