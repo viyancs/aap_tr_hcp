@@ -24,8 +24,8 @@ provider "azurerm" {
 }
 
 provider "aap" {
-  host                 = var.enable_aap ? var.aap_host : "http://localhost"
-  username             = var.enable_aap ? var.aap_username : "dummy"
-  password             = var.enable_aap ? var.aap_password : "dummy"
+  host                 = var.enable_aap ? var.aap_host : "http://127.0.0.1"
+  username             = var.enable_aap ? var.aap_username : "disabled"
+  password             = var.enable_aap ? var.aap_password : "disabled"
   insecure_skip_verify = true
 }
