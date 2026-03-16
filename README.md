@@ -87,6 +87,7 @@ Set Azure credentials as **environment variables** in the workspace terraform en
 - `TF_VAR_aap_username`
 - `TF_VAR_aap_password`
 - `enable_aap` false to disable automate ansible
+- `TF_VAR_aap_job_template_id` 
 
 Variables and variable sets in HCP Terraform can be managed at the workspace or project level.
 
@@ -101,7 +102,6 @@ Add these as **Terraform Variables** in HCP Terraform:
 | `vm_admin_username` | No | `azureuser` |
 | `vm_size` | No | `Standard_B2s` |
 | `ssh_public_key` | No | full public key text |
-| `my_ip_cidr` | No | `203.0.113.10/32` |
 
 Mark secrets like `TF_VAR_aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
 
@@ -109,18 +109,6 @@ Mark secrets like `TF_VAR_aap_password` as **sensitive**. HCP Terraform variable
 
 Once the workspace variables are configured, queue a run. HCP Terraform performs remote operations in the context of a workspace, which provides configuration, state, and variables for the run. ';
 
-## Example `aap_job_extra_vars`
-
-Use HCL map syntax in a Terraform variable:
-
-```hcl
-{
-  web_server = "nginx"
-  app_env    = "dev"
-}
-```
-
-If you enter it in the HCP Terraform UI, make sure the variable is stored as an HCL value, not a plain quoted string.
 
 ## Optional: CLI-driven remote runs
 
