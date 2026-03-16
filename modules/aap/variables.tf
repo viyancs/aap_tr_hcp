@@ -1,7 +1,3 @@
-variable "aap_host" {}
-variable "aap_username" {}
-variable "aap_password" {}
-variable "aap_insecure_skip_verify" {}
 
 variable "aap_job_template_name" {}
 variable "aap_organization_name" {}

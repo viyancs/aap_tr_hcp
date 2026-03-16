@@ -35,10 +35,9 @@ module "aap" {
 
   count = var.enable_aap ? 1 : 0
 
-  aap_host                 = var.aap_host
-  aap_username             = var.aap_username
-  aap_password             = var.aap_password
-  aap_insecure_skip_verify = var.aap_insecure_skip_verify
+  providers = {
+    aap = aap
+  }
 
   aap_job_template_name = var.aap_job_template_name
   aap_organization_name = var.aap_organization_name
