@@ -102,11 +102,6 @@ Add these as **Terraform Variables** in HCP Terraform:
 | `vm_size` | No | `Standard_B2s` |
 | `ssh_public_key` | No | full public key text |
 | `my_ip_cidr` | No | `203.0.113.10/32` |
-| `aap_insecure_skip_verify` | No | `false` |
-| `aap_organization_name` | No | `Default` |
-| `aap_job_template_name` | No | `linux-install-nginx` |
-| `aap_inventory_name` | No | optional |
-| `aap_job_extra_vars` | No | map/object |
 
 Mark secrets like `TF_VAR_aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
 

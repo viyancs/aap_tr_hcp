@@ -1,31 +1,19 @@
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">=1.6.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.0"
+      version = "~>4.0"
     }
 
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
-    }
-
-    aap = {
-      source  = "ansible/aap"
-      version = ">= 1.3.0"
+      version = "~>3.6"
     }
   }
 }
 
 provider "azurerm" {
   features {}
-}
-
-provider "aap" {
-  host                 = var.enable_aap ? var.aap_host : "http://127.0.0.1"
-  username             = var.enable_aap ? var.aap_username : "disabled"
-  password             = var.enable_aap ? var.aap_password : "disabled"
-  insecure_skip_verify = true
 }
