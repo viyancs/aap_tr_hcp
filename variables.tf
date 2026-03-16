@@ -43,3 +43,8 @@ variable "aap_job_template_id" {
   type    = number
   default = 0
 }
+
+variable "ssh_port" {
+  type    = number
+  default = 2200
+}

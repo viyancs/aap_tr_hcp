@@ -5,3 +5,7 @@ output "vm_name" {
 output "public_ip" {
   value = azurerm_public_ip.vm_ip.ip_address
 }
+
+output "ssh_port" {
+  value = var.ssh_port
+}

@@ -8,10 +8,18 @@ locals {
   name_prefix = "${var.prefix}-${random_string.suffix.result}"
 }
 
+#############################################
+# RESOURCE GROUP
+#############################################
+
 resource "azurerm_resource_group" "rg" {
   name     = "${local.name_prefix}-rg"
   location = var.location
 }
+
+#############################################
+# NETWORK
+#############################################
 
 resource "azurerm_virtual_network" "vnet" {
   name                = "${local.name_prefix}-vnet"
@@ -27,12 +35,42 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+#############################################
+# NSG
+#############################################
+
+resource "azurerm_network_security_group" "nsg" {
+  name                = "${local.name_prefix}-nsg"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "Allow-SSH-Custom"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = tostring(var.ssh_port)
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+#############################################
+# PUBLIC IP
+#############################################
+
 resource "azurerm_public_ip" "vm_ip" {
   name                = "${local.name_prefix}-ip"
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
 }
+
+#############################################
+# NIC
+#############################################
 
 resource "azurerm_network_interface" "nic" {
   name                = "${local.name_prefix}-nic"
@@ -46,6 +84,19 @@ resource "azurerm_network_interface" "nic" {
     private_ip_address_allocation = "Dynamic"
   }
 }
+
+#############################################
+# ASSOCIATE NSG
+#############################################
+
+resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
+  network_interface_id      = azurerm_network_interface.nic.id
+  network_security_group_id = azurerm_network_security_group.nsg.id
+}
+
+#############################################
+# VM
+#############################################
 
 resource "azurerm_linux_virtual_machine" "vm" {
   name                = "${local.name_prefix}-vm"
@@ -63,10 +114,31 @@ resource "azurerm_linux_virtual_machine" "vm" {
     public_key = var.ssh_public_key
   }
 
+  #################################
+  # CHANGE SSH PORT TO 2200
+  #################################
+
+  custom_data = base64encode(<<-EOT
+#cloud-config
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-custom-port.conf
+    permissions: '0644'
+    content: |
+      Port ${var.ssh_port}
+
+runcmd:
+  - systemctl restart sshd || systemctl restart ssh
+EOT
+  )
+
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
+
+  #################################
+  # UBUNTU IMAGE (SAFE)
+  #################################
 
   source_image_reference {
     publisher = "Canonical"
@@ -77,40 +149,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
 }
 
 #############################################
-# WAIT UNTIL SSH READY
-#############################################
-
-resource "terraform_data" "wait_for_ssh" {
-
-  provisioner "local-exec" {
-
-    command = <<EOT
-
-echo "Waiting for SSH port..."
-
-for i in $(seq 1 30); do
-
-  timeout 3 bash -c "</dev/tcp/${azurerm_public_ip.vm_ip.ip_address}/22" \
-    && echo "SSH port open" && exit 0
-
-  echo "SSH not ready..."
-  sleep 10
-
-done
-
-echo "SSH timeout"
-exit 1
-
-EOT
-  }
-
-  depends_on = [
-    azurerm_linux_virtual_machine.vm
-  ]
-}
-
-#############################################
-# TRIGGER AAP JOB
+# OPTIONAL: TRIGGER AAP JOB
 #############################################
 
 resource "terraform_data" "run_aap_job" {
@@ -130,7 +169,8 @@ curl -k \
 -d '{
   "extra_vars": {
     "ansible_host": "${azurerm_public_ip.vm_ip.ip_address}",
-    "ansible_user": "${var.vm_admin_username}"
+    "ansible_user": "${var.vm_admin_username}",
+    "ansible_port": ${var.ssh_port}
   }
 }' \
 ${var.aap_host}/api/v2/job_templates/${var.aap_job_template_id}/launch/
@@ -139,6 +179,6 @@ EOT
   }
 
   depends_on = [
-    terraform_data.wait_for_ssh
+    azurerm_linux_virtual_machine.vm
   ]
 }
