@@ -79,10 +79,10 @@ Login into azure portal -> create app registration under Microsoft Entra id -> c
 after that copy information about tenant subcription id , secret , app id to this environment variable 
 
 Set Azure credentials as **environment variables** in the workspace terraform enterprise:
-- `ARM_SUBSCRIPTION_ID`
-- `ARM_TENANT_ID`
-- `ARM_CLIENT_ID`
-- `ARM_CLIENT_SECRET`
+- `TF_VAR_ARM_SUBSCRIPTION_ID`
+- `TF_VAR_ARM_TENANT_ID`
+- `TF_VAR_ARM_CLIENT_ID`
+- `TF_VAR_ARM_CLIENT_SECRET`
 - `TF_VAR_aap_host`
 - `TF_VAR_aap_username`
 - `TF_VAR_aap_password`
