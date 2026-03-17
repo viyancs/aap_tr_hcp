@@ -86,7 +86,7 @@ resource "azurerm_network_interface" "nic" {
 }
 
 #############################################
-# ASSOCIATE NSG
+# ASSOCIATE NSG TO NIC
 #############################################
 
 resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
@@ -95,7 +95,7 @@ resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
 }
 
 #############################################
-# VM
+# LINUX VM
 #############################################
 
 resource "azurerm_linux_virtual_machine" "vm" {
@@ -114,10 +114,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
     public_key = var.ssh_public_key
   }
 
-  #################################
-  # CHANGE SSH PORT TO 2200
-  #################################
-
+  # Ubah SSH daemon listen ke port custom
   custom_data = base64encode(<<-EOT
 #cloud-config
 write_files:
@@ -136,10 +133,7 @@ EOT
     storage_account_type = "Standard_LRS"
   }
 
-  #################################
-  # UBUNTU IMAGE (SAFE)
-  #################################
-
+  # Image aman dan umum tersedia
   source_image_reference {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-jammy"
@@ -149,36 +143,71 @@ EOT
 }
 
 #############################################
-# OPTIONAL: TRIGGER AAP JOB
+# WAIT FOR SSH PORT READY
 #############################################
 
-resource "terraform_data" "run_aap_job" {
-
-  count = var.enable_aap ? 1 : 0
-
+resource "terraform_data" "wait_for_ssh" {
   provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
 
     command = <<EOT
+set -e
 
-echo "Triggering AAP job..."
+echo "Waiting for SSH port ${var.ssh_port} on ${azurerm_public_ip.vm_ip.ip_address}..."
 
-curl -k \
--u "${var.aap_username}:${var.aap_password}" \
--H "Content-Type: application/json" \
--X POST \
--d '{
-  "extra_vars": {
-    "ansible_host": "${azurerm_public_ip.vm_ip.ip_address}",
-    "ansible_user": "${var.vm_admin_username}",
-    "ansible_port": ${var.ssh_port}
-  }
-}' \
-${var.aap_host}/api/v2/job_templates/${var.aap_job_template_id}/launch/
+for i in $(seq 1 60); do
+  if bash -c "</dev/tcp/${azurerm_public_ip.vm_ip.ip_address}/${var.ssh_port}" 2>/dev/null; then
+    echo "SSH port ready"
+    exit 0
+  fi
 
+  echo "SSH not ready yet... attempt $i/60"
+  sleep 10
+done
+
+echo "SSH timeout"
+exit 1
 EOT
   }
 
   depends_on = [
     azurerm_linux_virtual_machine.vm
+  ]
+}
+
+#############################################
+# OPTIONAL: TRIGGER AAP JOB
+#############################################
+
+resource "terraform_data" "run_aap_job" {
+  count = var.enable_aap ? 1 : 0
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+
+    command = <<EOT
+set -e
+
+echo "Triggering AAP job..."
+
+curl -k \
+  -u "${var.aap_username}:${var.aap_password}" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d '{
+    "extra_vars": {
+      "ansible_host": "${azurerm_public_ip.vm_ip.ip_address}",
+      "ansible_user": "${var.vm_admin_username}",
+      "ansible_port": ${var.ssh_port}
+    }
+  }' \
+  "${var.aap_host}/api/v2/job_templates/${var.aap_job_template_id}/launch/"
+
+echo "AAP job triggered"
+EOT
+  }
+
+  depends_on = [
+    terraform_data.wait_for_ssh
   ]
 }
