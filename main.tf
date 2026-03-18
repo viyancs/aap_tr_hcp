@@ -206,36 +206,37 @@ set -e
 
 echo "Register host to AAP inventory..."
 
-curl -k \
-  -u "${var.aap_username}:${var.aap_password}" \
+CREATE_HOST_RESPONSE=$(
+curl -sk \
+  -H "Authorization: Bearer ${var.aap_password}" \
   -H "Content-Type: application/json" \
   -X POST \
-  -d '{
-    "name": "${azurerm_linux_virtual_machine.vm.name}",
-    "inventory": ${var.aap_inventory_id},
-    "enabled": true,
-    "variables": "ansible_host=${azurerm_public_ip.vm_ip.ip_address}\nansible_user=${var.vm_admin_username}\nansible_port=${var.ssh_port}"
-  }' \
-  "${var.aap_host}/api/v2/hosts/"
+  -d "{
+    \"name\": \"${azurerm_linux_virtual_machine.vm.name}\",
+    \"enabled\": true,
+    \"variables\": \"ansible_host: ${azurerm_public_ip.vm_ip.ip_address}\nansible_user: ${var.vm_admin_username}\nansible_port: ${var.ssh_port}\"
+  }" \
+  "${var.aap_host}/api/controller/v2/inventories/${var.aap_inventory_id}/hosts/"
+)
 
-echo "Host added to inventory"
+echo "Create host response:"
+echo "${CREATE_HOST_RESPONSE}"
 
 echo "Triggering AAP job..."
 
-curl -k \
-  -u "${var.aap_username}:${var.aap_password}" \
+LAUNCH_JOB_RESPONSE=$(
+curl -sk \
+  -H "Authorization: Bearer ${var.aap_password}" \
   -H "Content-Type: application/json" \
   -X POST \
-  -d '{
-    "extra_vars": {
-      "ansible_host": "${azurerm_public_ip.vm_ip.ip_address}",
-      "ansible_user": "${var.vm_admin_username}",
-      "ansible_port": ${var.ssh_port}
-    }
-  }' \
-  "${var.aap_host}/api/v2/job_templates/${var.aap_job_template_id}/launch/"
+  -d "{}" \
+  "${var.aap_host}/api/controller/v2/job_templates/${var.aap_job_template_id}/launch/"
+)
 
-echo "AAP job triggered"
+echo "Launch job response:"
+echo "${LAUNCH_JOB_RESPONSE}"
+
+echo "Done."
 EOT
   }
 
