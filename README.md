@@ -86,7 +86,6 @@ Set Azure credentials as **environment variables** in the workspace terraform en
 - `TF_VAR_aap_host`
 - `TF_VAR_aap_username`
 - `TF_VAR_aap_password`
-- `enable_aap` false to disable automate ansible
 - `TF_VAR_aap_job_template_id` 
 
 Variables and variable sets in HCP Terraform can be managed at the workspace or project level.
@@ -97,6 +96,7 @@ Add these as **Terraform Variables** in HCP Terraform:
 
 | Variable | Sensitive | Example |
 |---|---:|---|
+| `enable_aap` | No | false | true to enable automate ansible nginx installation
 | `location` | No | `eastus` |
 | `prefix` | No | `demo` |
 | `vm_admin_username` | No | `azureuser` |
