@@ -1,4 +1,4 @@
-# Azure + AAP Provider Project for HCP Terraform / Terraform Cloud
+## Azure + AAP Provider Project for HCP Terraform / Terraform Cloud
 
 It provisions an Azure VM and then uses the **official `ansible/aap` Terraform provider** to:
 - look up an existing AAP / Automation Controller Job Template
