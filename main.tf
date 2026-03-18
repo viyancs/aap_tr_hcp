@@ -185,6 +185,33 @@ resource "terraform_data" "run_aap_job" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
 
+        command = <<EOT
+set -e
+
+echo "Register host to AAP inventory..."
+
+#############################################
+# CREATE HOST IN INVENTORY
+#############################################
+
+curl -k \
+  -u "${var.aap_username}:${var.aap_password}" \
+  -H "Content-Type: application/json" \
+  -X POST \
+  -d '{
+    "name": "${azurerm_linux_virtual_machine.vm.name}",
+    "inventory": ${var.aap_inventory_id},
+    "enabled": true,
+    "variables": "ansible_host=${azurerm_public_ip.vm_ip.ip_address}\nansible_user=${var.vm_admin_username}\nansible_port=${var.ssh_port}"
+  }' \
+  "${var.aap_host}/api/v2/hosts/"
+
+echo "Host added to inventory"
+
+#############################################
+# LAUNCH JOB TEMPLATE
+#############################################
+
     command = <<EOT
 set -e
 
