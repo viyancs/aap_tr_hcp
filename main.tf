@@ -55,6 +55,21 @@ resource "azurerm_network_security_group" "nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+
+  #################################
+  # HTTP PORT 80
+  #################################
+  security_rule {
+    name                       = "Allow-HTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 #############################################
@@ -175,6 +190,7 @@ EOT
   ]
 }
 
+
 #############################################
 # OPTIONAL: TRIGGER AAP JOB
 #############################################
@@ -185,14 +201,10 @@ resource "terraform_data" "run_aap_job" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
 
-        command = <<EOT
+    command = <<EOT
 set -e
 
 echo "Register host to AAP inventory..."
-
-#############################################
-# CREATE HOST IN INVENTORY
-#############################################
 
 curl -k \
   -u "${var.aap_username}:${var.aap_password}" \
@@ -207,13 +219,6 @@ curl -k \
   "${var.aap_host}/api/v2/hosts/"
 
 echo "Host added to inventory"
-
-#############################################
-# LAUNCH JOB TEMPLATE
-#############################################
-
-    command = <<EOT
-set -e
 
 echo "Triggering AAP job..."
 
