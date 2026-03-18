@@ -220,7 +220,7 @@ curl -sk \
 )
 
 echo "Create host response:"
-echo "$CREATE_HOST_RESPONSE"
+echo "$${CREATE_HOST_RESPONSE}"
 
 echo "Triggering AAP job..."
 
@@ -234,7 +234,7 @@ curl -sk \
 )
 
 echo "Launch job response:"
-echo "$LAUNCH_JOB_RESPONSE"
+echo "$${LAUNCH_JOB_RESPONSE}"
 
 echo "Done."
 EOT
