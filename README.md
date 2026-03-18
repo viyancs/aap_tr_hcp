@@ -102,6 +102,8 @@ Add these as **Terraform Variables** in HCP Terraform:
 | `vm_admin_username` | No | `azureuser` |
 | `vm_size` | No | `Standard_B2s` |
 | `ssh_public_key` | No | full public key text |
+| `aap_inventory_id` | No | inventory id on aap |
+
 
 Mark secrets like `TF_VAR_aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
 

@@ -48,3 +48,7 @@ variable "ssh_port" {
   type    = number
   default = 2200
 }
+
+variable "aap_inventory_id" {
+  type = number
+}
