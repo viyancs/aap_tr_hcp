@@ -1,15 +1,15 @@
-output "resource_group_name" {
-  value = azurerm_resource_group.rg.name
-}
+#############################################
+# OUTPUTS
+#############################################
 
-output "vm_name" {
-  value = azurerm_linux_virtual_machine.vm.name
+output "instance_id" {
+  value = aws_instance.vm.id
 }
 
 output "public_ip" {
-  value = azurerm_public_ip.vm_ip.ip_address
+  value = aws_instance.vm.public_ip
 }
 
-output "ssh_port" {
-  value = var.ssh_port
+output "ssh_command" {
+  value = "ssh -p ${var.ssh_port} ubuntu@${aws_instance.vm.public_ip}"
 }

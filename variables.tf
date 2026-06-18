@@ -1,17 +1,17 @@
-variable "location" {
-  type = string
+variable "aws_region" {
+  default = "ap-southeast-1"
 }
 
 variable "prefix" {
-  type = string
+  default = "demo"
 }
 
-variable "vm_admin_username" {
-  type = string
+variable "instance_type" {
+  default = "t3.micro"
 }
 
-variable "vm_size" {
-  type = string
+variable "ssh_port" {
+  default = 2222
 }
 
 variable "ssh_public_key" {
@@ -19,36 +19,26 @@ variable "ssh_public_key" {
 }
 
 variable "enable_aap" {
-  type    = bool
   default = false
 }
 
 variable "aap_host" {
-  type    = string
-  default = ""
-}
-
-variable "aap_username" {
-  type    = string
   default = ""
 }
 
 variable "aap_password" {
-  type      = string
-  sensitive = true
   default   = ""
-}
-
-variable "aap_job_template_id" {
-  type    = number
-  default = 0
-}
-
-variable "ssh_port" {
-  type    = number
-  default = 2200
+  sensitive = true
 }
 
 variable "aap_inventory_id" {
-  type = number
+  default = 0
+}
+
+variable "aap_job_template_id" {
+  default = 0
+}
+
+variable "aws_account_id" {
+  type = string
 }
