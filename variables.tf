@@ -28,7 +28,7 @@ variable "aap_host" {
 
 variable "aap_password" {
   default   = ""
-  #sensitive = true
+  sensitive = true
 }
 
 variable "aap_inventory_id" {
