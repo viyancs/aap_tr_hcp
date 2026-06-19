@@ -1,140 +1,287 @@
-## Azure + AAP Provider Project for HCP Terraform / Terraform Cloud
+# AWS + AAP Project for HCP Terraform / Terraform Cloud
 
-It provisions an Azure VM and then uses the **official `ansible/aap` Terraform provider** to:
-- look up an existing AAP / Automation Controller Job Template
-- create an AAP inventory
-- register the new VM as a host
-- launch the AAP job
+This project provisions a complete AWS demo environment and then optionally triggers an Ansible Automation Platform (AAP) Job Template.
+
+The Terraform workflow:
+
+* Creates a dedicated AWS VPC
+* Creates networking components (Subnet, Route Table, Internet Gateway, Security Group)
+* Creates an EC2 instance running Ubuntu 22.04
+* Waits for SSH connectivity
+* Registers the host in AAP inventory
+* Launches an AAP Job Template
 
 ## Target architecture
 
 ```text
-Git repo
+Git Repository
   ↓
-HCP Terraform workspace (VCS-driven)
+HCP Terraform Workspace (VCS-driven)
   ↓
-Azure provider provisions infrastructure
+AWS Provider provisions infrastructure
   ↓
-AAP provider creates inventory + host + launches job
+AAP API registers host and launches job
   ↓
-Ansible Automation Platform configures the VM
+Ansible Automation Platform configures the EC2 instance
 ```
 
 ## What changed for HCP Terraform support
 
-This conversion removes local-only assumptions and is designed for **remote runs**:
+This project is designed for remote execution using Terraform Cloud / Terraform Enterprise.
 
-- no required `az login` workflow
-- no Terraform Cloud `cloud {}` block by default, because VCS-driven workspaces do not need it
-- Azure authentication is expected from **workspace environment variables** or **dynamic credentials**
-- application and AAP values are expected from **workspace Terraform variables**
-- `terraform.tfvars.example` is kept only as a local reference
+Key characteristics:
+
+* No local AWS CLI credentials required
+* No local terraform.tfstate required
+* AWS authentication provided through workspace environment variables
+* Terraform variables managed through workspace variables
+* VCS-driven workflow supported
+* Infrastructure automatically created and destroyed from Terraform Cloud
+
+## Infrastructure created
+
+Terraform creates the following AWS resources:
+
+```text
+AWS Account
+└── VPC
+    ├── Internet Gateway
+    ├── Route Table
+    ├── Public Subnet
+    ├── Security Group
+    ├── EC2 Key Pair
+    └── Ubuntu 22.04 EC2 Instance
+```
+
+All resources are managed by Terraform and can be removed using:
+
+```bash
+terraform destroy
+```
 
 ## Project structure
 
 ```text
 .
-├── ansible/
-│   └── playbooks/
-│       └── install_nginx.yml
-├── docs/
-│   └── cloud_block.example.tf
-├── modules/
-│   ├── compute/
-│   └── network/
 ├── main.tf
 ├── outputs.tf
-├── terraform.tfvars.example
 ├── variables.tf
-└── versions.tf
+└── version.tf
 ```
 
-## HCP Terraform setup
+## HCP Terraform Setup
 
-### 1. Push this project to Git
+### 1. Push project to Git
 
-Put the project in GitHub, GitLab, Bitbucket, or Azure DevOps.
+Store the repository in:
 
-### 2. Create an HCP Terraform workspace
+* GitHub
+* GitLab
+* Bitbucket
+* Azure DevOps
 
-Create a **VCS-backed workspace** and connect it to the repository. HCP Terraform supports VCS-backed workspaces and lets you choose the tracked branch and working directory in workspace settings. 
+### 2. Create HCP Terraform Workspace
 
-For this repository:
-- **Working Directory**: leave blank if this project is at repo root
-- if you place it under a subfolder such as `terraform/`, set that subfolder as the workspace working directory
+Create a new workspace:
 
-Note: a new VCS workspace needs an initial manually queued run before later VCS webhook-triggered runs are accepted. 
+```text
+Create New Workspace
+  → Version Control Workflow
+  → Select Repository
+```
 
-step on hcp :
-----
-Create New Workspace -> Version Control Workflow -> choose github repository
+For Terraform Enterprise installations, configure GitHub OAuth access if required.
 
-if the terraform is enterprise we need to create oauth from github.com to be access from terraform standalone enterprise.
-going to setting from github.com -> developer setting-> setup oauth token
+Workspace settings:
 
+```text
+Working Directory:
+(blank if Terraform files are at repository root)
+```
 
-### 3. Configure Azure authentication
+### 3. Configure AWS Authentication
 
-Login into azure portal -> create app registration under Microsoft Entra id -> create 
-after that copy information about tenant subcription id , secret , app id to this environment variable 
+Create an IAM User in AWS with permissions to manage:
 
-Set Azure credentials as **environment variables** in the workspace terraform enterprise:
-- `ARM_SUBSCRIPTION_ID`
-- `ARM_TENANT_ID`
-- `ARM_CLIENT_ID`
-- `ARM_CLIENT_SECRET`
-- `TF_VAR_aap_host`
-- `TF_VAR_aap_username`
-- `TF_VAR_aap_password`
-- `TF_VAR_aap_job_template_id` 
+* EC2
+* VPC
+* Subnets
+* Route Tables
+* Internet Gateways
+* Security Groups
+* Key Pairs
 
-Variables and variable sets in HCP Terraform can be managed at the workspace or project level.
+Generate:
 
-### 4. Configure Terraform variables in the workspace
+```text
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
 
-Add these as **Terraform Variables** in HCP Terraform:
+Add the following as Workspace Environment Variables:
 
-| Variable | Sensitive | Example |
-|---|---:|---|
-| `enable_aap` | No | false | true to enable automate ansible nginx installation
-| `location` | No | `eastus` |
-| `prefix` | No | `demo` |
-| `vm_admin_username` | No | `azureuser` |
-| `vm_size` | No | `Standard_B2s` |
-| `ssh_public_key` | No | full public key text |
-| `aap_inventory_id` | No | inventory id on aap |
+| Variable              | Sensitive |
+| --------------------- | --------- |
+| AWS_ACCESS_KEY_ID     | No        |
+| AWS_SECRET_ACCESS_KEY | Yes       |
 
+Terraform automatically uses these credentials.
 
-Mark secrets like `TF_VAR_aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
+### 4. Configure AAP Environment Variables
 
-### 5. Queue a plan/apply
+Add the following Environment Variables:
 
-Once the workspace variables are configured, queue a run. HCP Terraform performs remote operations in the context of a workspace, which provides configuration, state, and variables for the run. ';
+| Variable                   | Sensitive |
+| -------------------------- | --------- |
+| TF_VAR_aap_host            | No        |
+| TF_VAR_aap_username        | No        |
+| TF_VAR_aap_password        | Yes       |
+| TF_VAR_aap_job_template_id | No        |
 
+Example:
 
-## Optional: CLI-driven remote runs
+```text
+TF_VAR_aap_host=https://aap.example.com
+TF_VAR_aap_username=admin
+TF_VAR_aap_password=********
+TF_VAR_aap_job_template_id=38
+```
 
-If you want to run from your workstation but keep execution/state in HCP Terraform, use the **CLI-driven remote workflow** and add the example shown in `docs/cloud_block.example.tf`. HCP Terraform supports UI/VCS-driven, API-driven, and CLI-driven remote run workflows. 
+### 5. Configure Terraform Variables
 
-For most enterprise use cases, **VCS-driven** is the cleaner approach.
+Add the following Terraform Variables:
 
-## Important AAP expectations
+| Variable         | Sensitive | Example             |
+| ---------------- | --------- | ------------------- |
+| aws_account_id   | No        | 212385701071        |
+| prefix           | No        | demo                |
+| instance_type    | No        | t3.micro            |
+| ssh_port         | No        | 2222                |
+| ssh_public_key   | No        | ssh-ed25519 AAAA... |
+| enable_aap       | No        | true                |
+| aap_inventory_id | No        | 11                  |
 
-This project assumes the following already exist in AAP / Automation Controller:
-- the organization named by `aap_organization_name`
-- the job template named by `aap_job_template_name`
-- credentials attached to that job template so it can SSH to the target VM
-- the job template is configured to allow **inventory prompt on launch**
+Example workspace configuration:
 
-Because the Terraform provider launches the job, the SSH private key should live in **AAP credentials**, not in HCP Terraform.
+```text
+aws_account_id = 212385701071
+enable_aap = true
+aap_inventory_id = 11
+ssh_public_key = ssh-ed25519 AAAA...
+```
+
+### 6. Queue Plan / Apply
+
+After variables are configured:
+
+```text
+Queue Run
+```
+
+Terraform Cloud will:
+
+```text
+Create VPC
+Create Networking
+Create Security Group
+Create Key Pair
+Create EC2 Instance
+Wait for SSH
+Register Host in AAP
+Launch Job Template
+```
+
+## AWS Account Safety Validation
+
+This project supports validation of the AWS Account ID to help prevent accidental deployment into the wrong AWS account.
+
+Terraform compares:
+
+```text
+Current AWS Account
+```
+
+against:
+
+```text
+aws_account_id
+```
+
+configured in the workspace.
+
+If they do not match, Terraform fails before creating resources.
+
+Example:
+
+```text
+Expected Account: 212385701071
+Actual Account:   999999999999
+
+Result:
+Terraform Run Failed
+```
+
+## Optional CLI-driven Remote Runs
+
+If desired, Terraform can still be executed locally while using Terraform Cloud for:
+
+* State management
+* Remote execution
+* Variable storage
+
+For most enterprise deployments, VCS-driven workspaces are recommended.
+
+## AAP Requirements
+
+This project assumes:
+
+* Ansible Automation Platform is already installed
+* Inventory exists in AAP
+* Job Template exists in AAP
+* SSH credentials are configured inside AAP
+* Job Template is launchable via API
+
+Terraform only registers the host and launches the job.
+
+The SSH private key should remain stored inside AAP credentials.
 
 ## Outputs
 
-After apply, Terraform returns:
-- Azure resource group name
-- VM name
-- public IP
-- private IP
-- created AAP inventory ID/name
-- AAP job launch resource ID
+After successful apply Terraform returns:
 
+```text
+instance_id
+public_ip
+ssh_command
+```
+
+Example:
+
+```text
+instance_id = i-0123456789abcdef
+public_ip   = 54.x.x.x
+
+ssh_command = ssh -p 2222 ubuntu@54.x.x.x
+```
+
+## Destroying the Environment
+
+To remove all AWS resources:
+
+```bash
+terraform destroy
+```
+
+Terraform removes:
+
+```text
+EC2 Instance
+Security Group
+Route Table
+Subnet
+Internet Gateway
+VPC
+Key Pair
+```
+
+This provides a clean demo environment similar to deleting an Azure Resource Group.
