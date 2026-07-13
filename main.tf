@@ -208,6 +208,8 @@ echo "Register host to AAP inventory..."
 
 CREATE_HOST_RESPONSE=$(
 curl -sk \
+  -H "CF-Access-Client-Id: ${var.cf_access_client_id}" \
+  -H "CF-Access-Client-Secret: ${var.cf_access_client_secret}" \
   -H "Authorization: Bearer ${var.aap_password}" \
   -H "Content-Type: application/json" \
   -X POST \
@@ -226,6 +228,8 @@ echo "Triggering AAP job..."
 
 LAUNCH_JOB_RESPONSE=$(
 curl -sk \
+  -H "CF-Access-Client-Id: ${var.cf_access_client_id}" \
+  -H "CF-Access-Client-Secret: ${var.cf_access_client_secret}" \
   -H "Authorization: Bearer ${var.aap_password}" \
   -H "Content-Type: application/json" \
   -X POST \

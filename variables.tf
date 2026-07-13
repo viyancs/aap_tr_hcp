@@ -39,6 +39,19 @@ variable "aap_password" {
   default   = ""
 }
 
+variable "cf_access_client_id" {
+  type        = string
+  default     = ""
+  description = "Cloudflare Access service token Client ID for AAP API requests."
+}
+
+variable "cf_access_client_secret" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "Cloudflare Access service token Client Secret for AAP API requests."
+}
+
 variable "aap_job_template_id" {
   type    = number
   default = 0

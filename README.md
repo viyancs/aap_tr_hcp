@@ -1,140 +1,275 @@
-## Azure + AAP Provider Project for HCP Terraform / Terraform Cloud
+## Azure + AAP Project for HCP Terraform / Terraform Cloud
 
-It provisions an Azure VM and then uses the **official `ansible/aap` Terraform provider** to:
-- look up an existing AAP / Automation Controller Job Template
-- create an AAP inventory
-- register the new VM as a host
-- launch the AAP job
+This project provisions an Azure demo environment and then optionally triggers an Ansible Automation Platform (AAP) Job Template.
+
+The Terraform workflow:
+
+* Creates an Azure Resource Group
+* Creates networking components (VNet, Subnet, NSG, Public IP, NIC)
+* Creates an Ubuntu 22.04 Linux VM
+* Waits for SSH connectivity
+* Registers the host in AAP inventory
+* Launches an AAP Job Template
 
 ## Target architecture
 
 ```text
-Git repo
+Git Repository
   ↓
-HCP Terraform workspace (VCS-driven)
+HCP Terraform Workspace (VCS-driven)
   ↓
-Azure provider provisions infrastructure
+Azure Provider provisions infrastructure
   ↓
-AAP provider creates inventory + host + launches job
+AAP API registers host and launches job
   ↓
 Ansible Automation Platform configures the VM
 ```
 
 ## What changed for HCP Terraform support
 
-This conversion removes local-only assumptions and is designed for **remote runs**:
+This project is designed for remote execution using Terraform Cloud / Terraform Enterprise.
 
-- no required `az login` workflow
-- no Terraform Cloud `cloud {}` block by default, because VCS-driven workspaces do not need it
-- Azure authentication is expected from **workspace environment variables** or **dynamic credentials**
-- application and AAP values are expected from **workspace Terraform variables**
-- `terraform.tfvars.example` is kept only as a local reference
+Key characteristics:
+
+* No local `az login` required
+* No local `terraform.tfstate` required
+* Azure authentication provided through workspace environment variables
+* Terraform variables managed through workspace variables
+* VCS-driven workflow supported
+* Infrastructure automatically created and destroyed from Terraform Cloud
+
+## Infrastructure created
+
+Terraform creates the following Azure resources:
+
+```text
+Azure Subscription
+└── Resource Group
+    ├── Virtual Network
+    ├── Subnet
+    ├── Network Security Group
+    ├── Public IP
+    ├── Network Interface
+    └── Ubuntu 22.04 Linux VM
+```
+
+All resources are managed by Terraform and can be removed using:
+
+```bash
+terraform destroy
+```
 
 ## Project structure
 
 ```text
 .
 ├── ansible/
-│   └── playbooks/
-│       └── install_nginx.yml
+│   └── install_nginx.yml
 ├── docs/
 │   └── cloud_block.example.tf
-├── modules/
-│   ├── compute/
-│   └── network/
+├── tests/
+│   └── aap_connect.sh
 ├── main.tf
 ├── outputs.tf
-├── terraform.tfvars.example
 ├── variables.tf
 └── versions.tf
 ```
 
-## HCP Terraform setup
+## HCP Terraform Setup
 
-### 1. Push this project to Git
+### 1. Push project to Git
 
-Put the project in GitHub, GitLab, Bitbucket, or Azure DevOps.
+Store the repository in:
 
-### 2. Create an HCP Terraform workspace
+* GitHub
+* GitLab
+* Bitbucket
+* Azure DevOps
 
-Create a **VCS-backed workspace** and connect it to the repository. HCP Terraform supports VCS-backed workspaces and lets you choose the tracked branch and working directory in workspace settings. 
+### 2. Create HCP Terraform Workspace
 
-For this repository:
-- **Working Directory**: leave blank if this project is at repo root
-- if you place it under a subfolder such as `terraform/`, set that subfolder as the workspace working directory
+Create a new workspace:
 
-Note: a new VCS workspace needs an initial manually queued run before later VCS webhook-triggered runs are accepted. 
+```text
+Create New Workspace
+  → Version Control Workflow
+  → Select Repository
+```
 
-step on hcp :
-----
-Create New Workspace -> Version Control Workflow -> choose github repository
+For Terraform Enterprise installations, configure GitHub OAuth access if required.
 
-if the terraform is enterprise we need to create oauth from github.com to be access from terraform standalone enterprise.
-going to setting from github.com -> developer setting-> setup oauth token
+Workspace settings:
 
+```text
+Working Directory:
+(blank if Terraform files are at repository root)
+```
 
-### 3. Configure Azure authentication
+### 3. Configure workspace variables
 
-Login into azure portal -> create app registration under Microsoft Entra id -> create 
-after that copy information about tenant subcription id , secret , app id to this environment variable 
+Configure the workspace using the two variable categories below.
 
-Set Azure credentials as **environment variables** in the workspace terraform enterprise:
-- `ARM_SUBSCRIPTION_ID`
-- `ARM_TENANT_ID`
-- `ARM_CLIENT_ID`
-- `ARM_CLIENT_SECRET`
-- `TF_VAR_aap_host`
-- `TF_VAR_aap_username`
-- `TF_VAR_aap_password`
-- `TF_VAR_aap_job_template_id` 
+#### Environment Variables
 
-Variables and variable sets in HCP Terraform can be managed at the workspace or project level.
-
-### 4. Configure Terraform variables in the workspace
-
-Add these as **Terraform Variables** in HCP Terraform:
+Set these as **Environment Variables** in the HCP Terraform workspace.
 
 | Variable | Sensitive | Example |
-|---|---:|---|
-| `enable_aap` | No | false | true to enable automate ansible nginx installation
-| `location` | No | `eastus` |
+| --- | ---: | --- |
+| `ARM_CLIENT_ID` | No | `13b1c257-c5e9-4f9b-acc1-288db157b69c` |
+| `ARM_CLIENT_SECRET` | Yes | app registration client secret |
+| `ARM_SUBSCRIPTION_ID` | No | `196fbf40-3a13-4c14-8c46-96188cdc0ada` |
+| `ARM_TENANT_ID` | No | `374d40ba-539d-4650-a7f2-fc7858617efe` |
+| `TF_VAR_aap_host` | No | `https://aap26.nurul-islam.my.id` |
+| `TF_VAR_aap_username` | No | `admin` |
+| `TF_VAR_aap_password` | Yes | AAP bearer token or password |
+| `TF_VAR_aap_job_template_id` | No | `20` |
+| `TF_VAR_cf_access_client_id` | No | Cloudflare Access service token Client ID |
+| `TF_VAR_cf_access_client_secret` | Yes | Cloudflare Access service token Client Secret |
+
+Azure authentication values come from an Azure App Registration:
+
+```text
+Azure Portal
+  → Microsoft Entra ID
+  → App registrations
+  → Create app registration
+  → Copy Tenant ID, Subscription ID, Client ID, and Client Secret
+```
+
+The `TF_VAR_*` environment variables are automatically mapped to Terraform input variables with the same name without the `TF_VAR_` prefix.
+
+If AAP is protected by Cloudflare Access, create a **Service Auth** token in Cloudflare Zero Trust and set `TF_VAR_cf_access_client_id` and `TF_VAR_cf_access_client_secret`. Terraform sends these values on every AAP API request as:
+
+```text
+CF-Access-Client-Id: <client-id>
+CF-Access-Client-Secret: <client-secret>
+```
+
+#### Terraform Variables
+
+Set these as **Terraform Variables** in the HCP Terraform workspace.
+
+| Variable | Sensitive | Example |
+| --- | ---: | --- |
 | `prefix` | No | `demo` |
+| `location` | No | `indonesiacentral` |
 | `vm_admin_username` | No | `azureuser` |
-| `vm_size` | No | `Standard_B2s` |
-| `ssh_public_key` | No | full public key text |
-| `aap_inventory_id` | No | inventory id on aap |
+| `vm_size` | No | `Standard_D2s_v3` |
+| `ssh_public_key` | No | `ssh-ed25519 AAAA... user@example.com` |
+| `enable_aap` | No | `true` |
+| `aap_inventory_id` | No | `7` |
+| `ssh_port` | No | `2200` |
 
+Notes:
 
-Mark secrets like `TF_VAR_aap_password` as **sensitive**. HCP Terraform variables support sensitive values and reusable variable sets. 
+* `enable_aap = true` enables host registration and AAP job launch after the VM is reachable over SSH.
+* `ssh_port` is optional and defaults to `2200`.
+* `ssh_public_key` must be the full public key text.
+* The SSH private key should remain stored in AAP credentials, not in HCP Terraform.
 
-### 5. Queue a plan/apply
+Example workspace configuration:
 
-Once the workspace variables are configured, queue a run. HCP Terraform performs remote operations in the context of a workspace, which provides configuration, state, and variables for the run. ';
+```text
+prefix = demo
+location = indonesiacentral
+vm_admin_username = azureuser
+vm_size = Standard_D2s_v3
+ssh_public_key = ssh-ed25519 AAAA...
+enable_aap = true
+aap_inventory_id = 7
+```
 
+### 4. Queue Plan / Apply
+
+After variables are configured:
+
+```text
+Queue Run
+```
+
+Terraform Cloud will:
+
+```text
+Create Resource Group
+Create Networking
+Create Security Group
+Create Linux VM
+Wait for SSH
+Register Host in AAP
+Launch Job Template
+```
 
 ## Optional: CLI-driven remote runs
 
-If you want to run from your workstation but keep execution/state in HCP Terraform, use the **CLI-driven remote workflow** and add the example shown in `docs/cloud_block.example.tf`. HCP Terraform supports UI/VCS-driven, API-driven, and CLI-driven remote run workflows. 
+If desired, Terraform can still be executed locally while using Terraform Cloud for:
 
-For most enterprise use cases, **VCS-driven** is the cleaner approach.
+* State management
+* Remote execution
+* Variable storage
 
-## Important AAP expectations
+Use the example in `docs/cloud_block.example.tf` for CLI-driven remote runs.
 
-This project assumes the following already exist in AAP / Automation Controller:
-- the organization named by `aap_organization_name`
-- the job template named by `aap_job_template_name`
-- credentials attached to that job template so it can SSH to the target VM
-- the job template is configured to allow **inventory prompt on launch**
+For most enterprise deployments, VCS-driven workspaces are recommended.
 
-Because the Terraform provider launches the job, the SSH private key should live in **AAP credentials**, not in HCP Terraform.
+## AAP Requirements
+
+This project assumes:
+
+* Ansible Automation Platform is already installed
+* Inventory exists in AAP
+* Job Template exists in AAP
+* SSH credentials are configured inside AAP
+* Job Template is launchable via API
+* If AAP is behind Cloudflare Access, a service token is configured and allowed for the AAP application
+
+Terraform only registers the host and launches the job.
+
+The SSH private key should remain stored inside AAP credentials.
 
 ## Outputs
 
-After apply, Terraform returns:
-- Azure resource group name
-- VM name
-- public IP
-- private IP
-- created AAP inventory ID/name
-- AAP job launch resource ID
+After successful apply Terraform returns:
 
+```text
+resource_group_name
+vm_name
+public_ip
+ssh_port
+```
+
+Example:
+
+```text
+resource_group_name = demo-abcd-rg
+vm_name             = demo-abcd-vm
+public_ip           = 20.x.x.x
+ssh_port            = 2200
+```
+
+SSH example:
+
+```text
+ssh -p 2200 azureuser@20.x.x.x
+```
+
+## Destroying the Environment
+
+To remove all Azure resources:
+
+```bash
+terraform destroy
+```
+
+Terraform removes:
+
+```text
+Linux VM
+Network Interface
+Public IP
+Network Security Group
+Subnet
+Virtual Network
+Resource Group
+```
+
+This provides a clean demo environment similar to deleting an Azure Resource Group.

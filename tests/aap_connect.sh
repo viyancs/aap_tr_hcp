@@ -2,8 +2,10 @@
 set -euo pipefail
 
 # Required env vars
-# export AAP_HOST="https://aap26.lutpiero.cloud"
+# export AAP_HOST="https://aap26.nurul-islam.my.id"
 # export AAP_PASSWORD="xxxxxxxxxxxxxxxx"
+# export CF_ACCESS_CLIENT_ID="xxxxxxxxxxxxxxxx.access"
+# export CF_ACCESS_CLIENT_SECRET="xxxxxxxxxxxxxxxx"
 # export AAP_INVENTORY_ID="7"
 # export AAP_JOB_TEMPLATE_ID="20"
 # export VM_NAME="demo-srnh-vm"
@@ -14,6 +16,8 @@ set -euo pipefail
 required_vars=(
   AAP_HOST
   AAP_PASSWORD
+  CF_ACCESS_CLIENT_ID
+  CF_ACCESS_CLIENT_SECRET
   AAP_INVENTORY_ID
   AAP_JOB_TEMPLATE_ID
   VM_NAME
@@ -29,6 +33,11 @@ for v in "${required_vars[@]}"; do
   fi
 done
 
+cf_access_headers=(
+  -H "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}"
+  -H "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}"
+)
+
 echo "AAP_HOST=$AAP_HOST"
 echo "AAP_INVENTORY_ID=$AAP_INVENTORY_ID"
 echo "AAP_JOB_TEMPLATE_ID=$AAP_JOB_TEMPLATE_ID"
@@ -37,9 +46,12 @@ echo "VM_PUBLIC_IP=$VM_PUBLIC_IP"
 echo "VM_ADMIN_USERNAME=$VM_ADMIN_USERNAME"
 echo "SSH_PORT=$SSH_PORT"
 echo "AAP_PASSWORD is set"
+echo "CF_ACCESS_CLIENT_ID is set"
+echo "CF_ACCESS_CLIENT_SECRET is set"
 
 echo "Testing token auth..."
 curl -sk \
+  "${cf_access_headers[@]}" \
   -H "Authorization: Bearer ${AAP_PASSWORD}" \
   "${AAP_HOST}/api/controller/v2/me"
 
@@ -47,6 +59,7 @@ echo "Register host to AAP inventory..."
 
 CREATE_HOST_RESPONSE=$(
 curl -sk \
+  "${cf_access_headers[@]}" \
   -H "Authorization: Bearer ${AAP_PASSWORD}" \
   -H "Content-Type: application/json" \
   -X POST \
@@ -65,6 +78,7 @@ echo "Triggering AAP job..."
 
 LAUNCH_JOB_RESPONSE=$(
 curl -sk \
+  "${cf_access_headers[@]}" \
   -H "Authorization: Bearer ${AAP_PASSWORD}" \
   -H "Content-Type: application/json" \
   -X POST \
